@@ -1,0 +1,10 @@
+{
+  "decisions": [
+    {"id": "dec-001", "title": "צבע מערכת", "summary": "נבחר סגול כהה לאלגנטיות.", "date": "2026-02-12"},
+    {"id": "dec-002", "title": "שפת פיתוח", "summary": "שימוש ב-Python עבור ה-Backend.", "date": "2026-02-15"}
+  ],
+  "rules": [
+    {"id": "rule-001", "text": "כל הממשק חייב לתמוך ב-RTL באופן מלא.", "category": "UI"},
+    {"id": "rule-002", "text": "אין לשמור סיסמאות בטקסט גלוי.", "category": "Security"}
+  ]
+}

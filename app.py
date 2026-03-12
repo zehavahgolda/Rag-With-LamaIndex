@@ -1,58 +1,78 @@
-import streamlit as st
 import os
+import ssl
+import streamlit as st
 import asyncio
-from dotenv import load_dotenv
 from agent_workflow import SmartAgentWorkflow
 
-# טעינת הגדרות
-load_dotenv()
+# ניסיון אחרון לעקוף הגדרות רשת כפויות
+os.environ['HTTP_PROXY'] = ""
+os.environ['HTTPS_PROXY'] = ""
+os.environ['NO_PROXY'] = "cohere.com,api.cohere.com"
 
-st.set_page_config(page_title="AI Agent System", page_icon="🤖", layout="centered")
+# נטרול SSL עבור נטפרי
+os.environ['CURL_CA_BUNDLE'] = ''
+os.environ['PYTHONHTTPSVERIFY'] = '0'
+ssl._create_default_https_context = ssl._create_unverified_context
 
-# עיצוב
+# 1. הגדרת עיצוב כהה (Dark Mode)
+st.set_page_config(page_title="Agentic RAG", page_icon="🤖")
+
+# הזרקת CSS שתהפוך את הכל לשחור עמוק (Darker than Dark)
 st.markdown("""
     <style>
-    .stApp { background-color: #1e1e2f; color: white; }
-    .stButton>button { background-color: #6d28d9; color: white; border-radius: 10px; width: 100%; }
-    .stTextInput>div>div>input { background-color: #2d2d44; color: white; }
+    /* הופך את כל רקע האפליקציה לשחור */
+    .stApp, [data-testid="stAppViewContainer"] {
+        background-color: #0e1117 !important;
+    }
+    /* הופך את הבועות של הצ'אט לכהות מאוד */
+    [data-testid="stChatMessage"] {
+        background-color: #161b22 !important;
+        border: 1px solid #30363d;
+        color: white;
+    }
+    /* צבע לבן לכל הטקסט */
+    h1, h2, h3, p, span, li {
+        color: white !important;
+    }
+    /* שורת קלט שחורה */
+    .stChatInputContainer {
+        background-color: #0e1117 !important;
+    }
     </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 st.title("🤖 הסוכן החכם שלי (Agentic RAG)")
-st.subheader("מערכת שאלות ותשובות מבוססת Workflow")
+st.subheader("Workflow מערכת שאלות ותשובות מבוססת")
 
-query = st.text_input("מה תרצו לדעת?", placeholder="למשל: מה הצבע העיקרי של המערכת?")
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-if st.button("שאל את הסוכן"):
-    if query:
-        with st.spinner("🕵️ הסוכן חוקר את המידע ומגבש תשובה..."):
-            try:
-                # התיקון לשגיאת ה-Event Loop:
-                async def run_agent():
-                    agent = SmartAgentWorkflow(timeout=60)
-                    return await agent.run(query=query)
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-                # הרצה בטוחה של הקוד האסינכרוני
-                try:
-                    # מנסים לקבל loop קיים
-                    loop = asyncio.get_event_loop()
-                except RuntimeError:
-                    # אם אין loop, יוצרים חדש
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                
-                result = loop.run_until_complete(run_agent())
-                
-                st.success("✅ תשובת הסוכן:")
-                st.write(result)
-                
-                with st.expander("ראה לוגים של ה-Workflow"):
-                    st.info("הסוכן ביצע שליפה (Retrieve) ולאחר מכן וולידציה (Validation) מבוססת תוכן.")
+query = st.chat_input("מה תרצו לדעת?")
+
+if query:
+    st.session_state.messages.append({"role": "user", "content": query})
+    with st.chat_message("user"):
+        st.markdown(query)
+
+    with st.chat_message("assistant"):
+        placeholder = st.empty()
+        placeholder.markdown("🔍 הסוכן חושב...")
+        
+        try:
+            # 2. הדרך היחידה להריץ ב-Streamlit בלי שגיאות Loop
+            async def run_agent():
+                workflow = SmartAgentWorkflow(timeout=60)
+                return await workflow.run(query=query)
+
+            # הרצה שמחכה לתוצאה (Await) בצורה נכונה
+            result = asyncio.run(run_agent())
             
-            except Exception as e:
-                st.error(f"אירעה שגיאה: {e}")
-    else:
-        st.warning("אנא הזינו שאלה קודם.")
-
-st.markdown("---")
-st.caption("פיתוח שלב ב' - Agentic RAG Workflow | 2026")
+            placeholder.markdown(result)
+            st.session_state.messages.append({"role": "assistant", "content": result})
+        except Exception as e:
+            # אם מופיעה שגיאת SSL (הפס האדום), זה בגלל נטפרי
+            st.error(f"אירעה שגיאה: {e}")
