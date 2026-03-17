@@ -1,76 +1,71 @@
-🤖 Agentic RAG System - Project Decision Assistant
-An advanced Agentic RAG (Retrieval-Augmented Generation) system designed to query documents and structured data (JSON) using an intelligent workflow. Built specifically for managing project decisions with a sleek Custom Dark Mode interface and support for restricted network environments (e.g., Netfree).
+🤖 Agentic RAG: Project Decision Assistant
+Bridging the gap between messy documentation and structured insights.
+This project implements an advanced Event-Driven RAG (Retrieval-Augmented Generation) system. It doesn't just search; it thinks. Using an intelligent Agentic Workflow, the system routes queries between semantic vector search and structured data extraction to provide precise answers about project decisions, rules, and logs.
 
-🚀 Project Evolution
-Phase A: Basic RAG MVP
-Established the core infrastructure:
+📊 System Architecture (Workflow)
+The system is built on a non-linear, event-driven architecture using LlamaIndex Workflows.
 
-Document Processing: Ingested raw files and converted them into vector embeddings using Cohere.
+The Router: Analyzes the user's intent.
 
-Vector Storage: Implemented ChromaDB for efficient semantic data storage.
+Branch A (Semantic Search): Queries a high-performance Pinecone Vector DB for general context and "vibe" questions.
 
-Retrieval: Created a simple semantic search engine to fetch relevant context based on user queries.
+Branch B (Structured Extraction): Directly queries structured_data.json for hard facts (rules, dates, tech decisions).
 
-Phase B: Migration to Agentic Workflow
-Upgraded the system from a simple search to a sophisticated workflow-based agent:
+Synthesizer: Merges the gathered context and formulates a human-like response using Cohere's Command R+.
 
-Intelligent Routing: Added a Router step where the agent analyzes the query to decide between Semantic Search (ChromaDB) or Direct Data Extraction (JSON).
+🚀 Key Features
+Intelligent Routing: Automatically chooses the best data source for the question.
 
-Structured Data Extraction: Enabled high-precision reading of structured_data.json for factual project-specific answers.
+Netfree-Ready: Built-in SSL and Proxy bypass mechanisms for restricted network environments.
 
-Streamlit Integration: Overcame asyncio loop challenges to run complex workflows within a web interface.
+Hybrid Knowledge: Combines unstructured Markdown files (from Cursor/Claude) with structured JSON data.
+
+Sleek UI: A custom Streamlit "Deep Dark" interface optimized for developers.
 
 🛠 Tech Stack
-LlamaIndex: Framework for managing the Agentic Workflow and steps.
+Framework: LlamaIndex (Workflows & Agentic orchestration).
 
-Cohere (Command R+): High-performance LLM optimized for agentic tasks.
+LLM: Cohere Command R+ (Optimized for RAG and tool use).
 
-Streamlit: Interactive UI with a custom-engineered Dark Theme.
+Vector Database: Pinecone (Cloud-native vector storage).
 
-ChromaDB: Vector database for context-aware retrieval.
+Embeddings: Cohere multilingual-v3.0.
 
-🔒 Technical Challenges & Solutions
-SSL Bypass: Implemented global SSL overrides to ensure connectivity in environments with custom security certificates.
+UI: Streamlit with custom CSS.
 
-Python 3.11 Compatibility: Optimized environment setup to ensure stable asyncio performance.
-
-Network Connectivity: Configured custom httpx clients and environment variables to bypass proxy-related issues (Netfree/Corporate firewalls).
-
-🎨 UI/UX Features
-Total Dark Mode: Custom CSS for a deep black background (#0e1117).
-
-Chat Interface: Clean, distinguishable chat bubbles with optimized typography.
-
-RTL Support: Full support for Hebrew text and Right-to-Left alignment.
-
-How to add this to your project:
-Create/Open the README.md file in your root folder.
-
-Paste this English version inside.
-
-Commit message: docs: translate README to English and update technical architecture
-⚙️ Installation & Setup
-1. Prerequisites
-Python 3.11 (Recommended for stability with asyncio and SSL bypass).
-
-A Cohere API Key.
-2. Clone and Install Dependencies
-# Clone the repository
-git clone <your-repository-url>
-cd rag_app
-
-# Install required packages
-COHERE_API_KEY=your_api_key_here
-4. Running the Application
-python -m streamlit run app.py
 📂 Project Structure
-app.py: The Streamlit frontend with custom Dark Mode CSS.
+Plaintext
+├── rag_app/
+│   ├── agent_workflow.py     # The "Brain" - Event-Driven logic
+│   ├── app.py               # Streamlit UI & Async runner
+│   ├── ingestion.py         # Data processing & Pinecone upload
+│   ├── generate_viz.py      # Generates the Workflow HTML diagram
+│   ├── structured_data.json  # Structured facts and rules
+│   └── .env                 # API Keys and configuration
+└── data_source/             # Raw Markdown files from Coding Agents
+⚙️ Setup & Installation
+1. Environment Setup
+Create a .env file in the rag_app folder:
 
-agent_workflow.py: The core logic, including the Router, Retrieval, and Extraction steps.
+קטע קוד
+COHERE_API_KEY=your_key_here
+PINECONE_API_KEY=your_key_here
+2. Install Dependencies
+Bash
+pip install llama-index-core llama-index-llms-cohere llama-index-embeddings-cohere llama-index-vector-stores-pinecone pinecone-client streamlit python-dotenv httpx pyvis
+3. Ingest Data
+Bash
+python ingestion.py
+4. Run the Agent
+Bash
+streamlit run app.py
+🔍 Example Queries
+Semantic: "How does the system handle user authentication?"
 
-structured_data.json: The source for factual project decisions.
+Structured: "List all technical decisions made in the last month."
 
-chroma_db/: Vector storage for semantic search.
-python -m pip install streamlit llama-index-core llama-index-llms-cohere llama-index-embeddings-cohere nest_asyncio python-dotenv chromadb httpx
-3. Environment Variables
-Create a .env file in the root directory and add your API key:
+Hybrid: "Are there any specific CSS rules for the Dark Mode?"
+
+🎨 Visualizing the Workflow
+To regenerate the interactive workflow diagram, run:
+python generate_viz.py
