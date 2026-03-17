@@ -1,13 +1,14 @@
 import os
 import ssl
 import urllib3
-import chromadb
+# 1. החלפת הייבוא של Chroma ב-Pinecone
+from pinecone import Pinecone
+from llama_index.vector_stores.pinecone import PineconeVectorStore
 from llama_index.core import SimpleDirectoryReader, StorageContext, VectorStoreIndex
-from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.embeddings.cohere import CohereEmbedding
 from dotenv import load_dotenv
 
-# --- הגנות SSL עבור נטפרי (תקשורת עם Cohere) ---
+# --- הגנות SSL עבור נטפרי ---
 os.environ['CURL_CA_BUNDLE'] = ""
 ssl._create_default_https_context = ssl._create_unverified_context
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -15,46 +16,46 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 load_dotenv()
 
 def run_ingestion():
-    print("🚀 Starting Local Ingestion (No Pinecone needed)...")
+    print("🚀 Starting Pinecone Ingestion...")
     
-    # 1. הגדרת הנתיב המלא לתיקיית המקור
-    # ה-r לפני המרכאות פותר את בעיית ה-Unicode ב-Windows
+    # הגדרת נתיב המקור
     data_path = r"C:\Users\PC\Desktop\לימודים\יד\מחצית ב\מלכה ברוק\Rag With LamaIndex\data_source"
     
-    # 2. טעינת המסמכים (הוספנו recursive=True ליתר ביטחון)
-    print(f"Reading documents from: {data_path}")
+    # טעינת המסמכים
     reader = SimpleDirectoryReader(input_dir=data_path, recursive=True)
     documents = reader.load_data()
     
     if not documents:
-        print("❌ No documents found! Please check if there are files in the data_source folder.")
+        print("❌ No documents found!")
         return
 
     print(f"✅ Loaded {len(documents)} documents.")
 
-    # 3. יצירת מסד נתונים מקומי (ChromaDB)
-    db = chromadb.PersistentClient(path="./chroma_db")
-    chroma_collection = db.get_or_create_collection("my_docs")
+    # 2. התחברות ל-Pinecone באמצעות ה-Host שנטפרי אישרו
+    pc = Pinecone(api_key=os.environ["PINECONE_API_KEY"])
     
-    # 4. הגדרת ה-Vector Store וה-Storage Context
-    vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+    # השתמשי בקישור שנטפרי פתחו לך כאן
+    pinecone_index = pc.Index(host="https://agentic-docs-iaygeyt.svc.aped-4627-b74a.pinecone.io")
+    
+    # 3. הגדרת ה-Vector Store עבור Pinecone
+    vector_store = PineconeVectorStore(pinecone_index=pinecone_index)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
     
-    # 5. הגדרת מודל ה-Embedding של Cohere
+    # 4. הגדרת מודל ה-Embedding
     embed_model = CohereEmbedding(
         cohere_api_key=os.environ["COHERE_API_KEY"],
         model_name="embed-multilingual-v3.0"
     )
     
-    # 6. יצירת האינדקס ושמירה מקומית על הדיסק
-    print("📤 Indexing documents locally...")
+    # 5. יצירת האינדקס והעלאה לענן (Pinecone)
+    print("📤 Uploading and Indexing documents to Pinecone cloud...")
     index = VectorStoreIndex.from_documents(
         documents, 
         storage_context=storage_context, 
         embed_model=embed_model
     )
     
-    print("✅ SUCCESS! Data saved locally in /chroma_db folder.")
+    print("✅ SUCCESS! Data is now hosted on Pinecone.")
 
 if __name__ == "__main__":
     try:
